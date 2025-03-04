@@ -5,15 +5,9 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Entity
 @Table(name = "orders")
-@NoArgsConstructor
 public class Order {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -22,15 +16,25 @@ public class Order {
     private int quantity;
     private double price;
     private String status;
+    private Long paymentId;
 
     public Order() {
     }
 
-    public Order(String product, int quantity, double price, String status) {
+    public Order(String product, int quantity, double price, String status, Long paymentId) {
         this.product = product;
         this.quantity = quantity;
         this.price = price;
         this.status = status;
+        this.paymentId = paymentId;
+    }
+
+    public Long getPaymentId() {
+        return paymentId;
+    }
+
+    public void setPaymentId(Long paymentId) {
+        this.paymentId = paymentId;
     }
 
     public Long getId() {
