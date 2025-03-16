@@ -1,6 +1,8 @@
 package com.ecom.paymentexecutor;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.rabbitmq.client.AMQP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -15,38 +17,30 @@ public class PaymentExecutorController {
     private static final Logger log = LoggerFactory.getLogger(PaymentExecutorController.class);
     @Autowired
     RabbitTemplate rabbitTemplate;
+    @Autowired
+    PaymentExecutorService paymentExecutorService;
+
     ObjectMapper mapper = new ObjectMapper();
 
 
-    @RabbitListener(queues = "payment_queue")
-    public void processMessage(String message) {
+    @RabbitListener(queues = RabbitMQConfiguration.PAYMENT_QUEUE)
+    public void processMessage(String message) throws PaymentExecutorServiceException {
         try {
-            log.info("Received message: " + message);
+            log.info("Received message: {}", message);
             Payment payment = mapper.readValue(message, Payment.class);
             processPayment(payment);
-        } catch (Exception e) {
-            log.error("Error while processing message", e);
+        } catch (JsonProcessingException e) {
+            log.error("Error converting to json", e);
         }
     }
 
-    public void processPayment(Payment payment) {
+    public void processPayment(Payment payment) throws PaymentExecutorServiceException {
         try {
-            log.info("Processing payment: " + payment);
-            if (payment.getAmount() > 1000) {
-                throw new Exception("Payment amount is too high");
-            }
-            payment.setStatus("SUCCESS");
-            String paymentJson = mapper.writeValueAsString(payment);
-            rabbitTemplate.convertAndSend(PaymentExecutorApplication.EXCHANGE_NAME, "processed_payment", paymentJson);
-        } catch (Exception e) {
-            payment.setStatus("FAILED");
-            try {
-                String paymentJson = mapper.writeValueAsString(payment);
-                rabbitTemplate.convertAndSend(PaymentExecutorApplication.EXCHANGE_NAME, "processed_payment", paymentJson);
-            } catch (Exception ex) {
-                log.error("Error while processing payment", ex);
-            }
-
+            Payment processedPayment = paymentExecutorService.processPayment(payment);
+            log.info("Processed payment: {}", processedPayment);
+            rabbitTemplate.convertAndSend(RabbitMQConfiguration.EXCHANGE_NAME, RabbitMQConfiguration.ROUTING_KEY, mapper.writeValueAsString(processedPayment));
+        } catch (JsonProcessingException e) {
+            log.error("Error while processing payment json", e);
         }
     }
 }
