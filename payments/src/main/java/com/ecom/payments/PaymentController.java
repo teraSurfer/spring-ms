@@ -35,7 +35,7 @@ public class PaymentController {
             payment.setStatus("ACCEPTED");
             repository.save(payment);
             String paymentJson = mapper.writeValueAsString(payment);
-            rabbitTemplate.convertAndSend(PaymentsApplication.EXCHANGE_NAME, PaymentsApplication.ROUTING_KEY, paymentJson);
+            rabbitTemplate.convertAndSend(RabbitMQConfiguration.EXCHANGE_NAME, RabbitMQConfiguration.ROUTING_KEY, paymentJson);
             return ResponseEntity.ok(payment);
         } catch (Exception e) {
             // Log error
