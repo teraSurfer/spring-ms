@@ -17,7 +17,7 @@ public class RabbitMQConfiguration {
     // https://spring.io/guides/gs/messaging-rabbitmq
     public static final String EXCHANGE_NAME = "processed_payment_exchange";
     public static final String PAYMENT_EXCHANGE_NAME = "payment_exchange";
-    public static final String QUEUE_NAME = "processed_payment_queue";
+    public static final String PROCESSED_PAYMENTS_QUEUE_NAME = "processed_payment_queue";
     public static final String DLQ_NAME = PAYMENT_QUEUE + ".dlq";
     public static final String DLX_EXCHANGE_NAME = PAYMENT_EXCHANGE_NAME + ".dlx";
     public static final String ROUTING_KEY = "processed_payment";
@@ -34,7 +34,7 @@ public class RabbitMQConfiguration {
 
     @Bean("queue")
     Queue queue() {
-        return QueueBuilder.durable(QUEUE_NAME)
+        return QueueBuilder.durable(PROCESSED_PAYMENTS_QUEUE_NAME)
                 .build();
     }
 
