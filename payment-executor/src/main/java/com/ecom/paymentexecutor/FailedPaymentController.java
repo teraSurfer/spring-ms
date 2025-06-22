@@ -1,4 +1,4 @@
-package com.ecom.payments;
+package com.ecom.paymentexecutor;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -20,6 +20,8 @@ public class FailedPaymentController {
 
     @Autowired
     RabbitTemplate rabbitTemplate;
+
+    private ObjectMapper objectMapper = new ObjectMapper();
 
     private static final String HEADER_X_RETRIES_COUNT = "x-retries-count";
 //    private static final String HEADER_X_DELAY = "x-delay";
@@ -43,7 +45,7 @@ public class FailedPaymentController {
 //                .getMessageProperties()
 //                .getHeaders()
 //                .put(HEADER_X_DELAY, DELAY);
-        rabbitTemplate.send(RabbitMQConfiguration.EXCHANGE_NAME, RabbitMQConfiguration.ROUTING_KEY, failedMessage);
+        rabbitTemplate.send(RabbitMQConfiguration.PAYMENT_EXCHANGE_NAME, RabbitMQConfiguration.PAYMENT_ROUTING_KEY, failedMessage);
     }
 
     // after 3 retries, save the failed payment
@@ -52,6 +54,12 @@ public class FailedPaymentController {
             Payment failedPayment = new ObjectMapper().readValue(message.getBody(), Payment.class);
             failedPayment.setStatus("FAILED");
             repository.save(failedPayment);
+            OrderUpdateMessage orderUpdateMessage = new OrderUpdateMessage();
+            orderUpdateMessage.setOrderId(failedPayment.getOrderId());
+            orderUpdateMessage.setPaymentId(failedPayment.getId());
+            orderUpdateMessage.setStatus("PaymentFailed");
+            String orderUpdateMessageJson = objectMapper.writeValueAsString(orderUpdateMessage);
+            rabbitTemplate.convertAndSend(RabbitMQConfiguration.ORDER_UPDATES_EXCHANGE, RabbitMQConfiguration.ORDER_UPDATES_ROUTING_KEY, orderUpdateMessageJson);
         } catch (IOException e) {
             log.error("Error while converting message to Payment", e);
         } catch (Exception e) {

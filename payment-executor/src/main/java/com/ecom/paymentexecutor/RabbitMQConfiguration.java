@@ -24,6 +24,9 @@ public class RabbitMQConfiguration {
     public static final String PAYMENT_ROUTING_KEY = "payment";
     public static final String DLX_ROUTING_KEY = PAYMENT_ROUTING_KEY + ".failures";
 
+    public static final String ORDER_UPDATES_EXCHANGE = "order_updates_exchange";
+    public static final String ORDER_UPDATES_ROUTING_KEY = "order.updates";
+
     @Bean("payment_queue")
     Queue paymentQueue() {
         return QueueBuilder.durable(PAYMENT_QUEUE)
